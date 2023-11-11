@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI绘画</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        #container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input {
+            width: calc(100% - 16px);
+            padding: 10px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        img {
+            max-width: 100%;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        #loadingContainer,
+        #errorContainer {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #loadingContainer img,
+        #errorContainer img {
+            max-width: 50px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .fadeIn {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container" class="fadeIn">
+        <label for="promptInput">输入要求:</label>
+        <input type="text" id="promptInput">
+        <br>
+        <button id="generateBtn">生成图像！</button>
+        <div id="loadingContainer">
+            <img src="loading.gif" alt="Loading...">
+        </div>
+        <div id="errorContainer" style="display: none;">
+            <img src="exclamation.png" alt="Error">
+        </div>
+        <img id="generatedImage" alt="Generated Image" style="display: none;"> <!-- 初始时隐藏 -->
+    </div>
+
+    <script>
+        var errorContainer = document.getElementById('errorContainer');
+        errorContainer.style.display = 'none';  // 初始时隐藏错误图标
+
+        var generatedImage = document.getElementById('generatedImage');
+        generatedImage.style.display = 'none'; // 初始时隐藏生成的图像
+
+        document.getElementById('generateBtn').addEventListener('click', generateImage);
+
+        async function generateImage() {
+            try {
+                var loadingContainer = document.getElementById('loadingContainer');
+                // var errorContainer = document.getElementById('errorContainer'); // 不再需要此行
+
+                // 显示 loading 图标
+                loadingContainer.style.display = 'block';
+                errorContainer.style.display = 'none';
+                generatedImage.style.display = 'none';
+
+                // 替换成你的 Flask 应用程序运行的地址
+                var apiUrl = 'http://tomiya520.pythonanywhere.com';
+
+                // 获取用户输入的 prompt
+                var promptInput = document.getElementById('promptInput');
+                var prompt = promptInput.value;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: prompt }),
+                });
+
+                // 隐藏 loading 图标
+                loadingContainer.style.display = 'none';
+
+                if (!response.ok) {
+                    // 显示错误图标
+                    errorContainer.style.display = 'block';
+                    throw new Error('Network response was not ok');
+                }
+
+                const imageUrl = await response.text();
+
+                // 显示生成的图像
+                generatedImage.style.display = 'block';
+                generatedImage.src = imageUrl;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>
+
+</body>
+</html>
