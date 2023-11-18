@@ -105,68 +105,76 @@
     </div>
 
     <script>
-        var errorContainer = document.getElementById('errorContainer');
-        errorContainer.style.display = 'none';  // 初始时隐藏错误图标
+		var errorContainer = document.getElementById('errorContainer');
+		errorContainer.style.display = 'none';  // 初始时隐藏错误图标
 
-        var generatedImage = document.getElementById('generatedImage');
-        generatedImage.style.display = 'none'; // 初始时隐藏生成的图像
+		var generatedImage = document.getElementById('generatedImage');
+		generatedImage.style.display = 'none'; // 初始时隐藏生成的图像
 
-        document.getElementById('generateBtn').addEventListener('click', generateImage);
+		var generateBtn = document.getElementById('generateBtn');
+		generateBtn.addEventListener('click', generateImage);
 
-        async function generateImage() {
-            try {
-                var loadingContainer = document.getElementById('loadingContainer');
-                var apiKeyInput = document.getElementById('apiKeyInput');
+		async function generateImage() {
+			try {
+				var loadingContainer = document.getElementById('loadingContainer');
+				var apiKeyInput = document.getElementById('apiKeyInput');
 
-                // 显示 loading 图标
-                loadingContainer.style.display = 'block';
-                errorContainer.style.display = 'none';
-                generatedImage.style.display = 'none';
+				// 禁用按钮
+				generateBtn.disabled = true;
 
-                // 替换成你的 Flask 应用程序运行的地址
-                var apiUrl = 'https://tomiya520.pythonanywhere.com';
+				// 显示 loading 图标
+				loadingContainer.style.display = 'block';
+				errorContainer.style.display = 'none';
+				generatedImage.style.display = 'none';
 
-                // 获取用户输入的 prompt 和 API Key
-                var promptInput = document.getElementById('promptInput');
-                var prompt = promptInput.value;
-                var apiKey = apiKeyInput.value;
+				// 替换成你的 Flask 应用程序运行的地址
+				var apiUrl = 'http://127.0.0.1/index.php';
 
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ prompt: prompt , key: apiKey }),
-                });
+				// 获取用户输入的 prompt 和 API Key
+				var promptInput = document.getElementById('promptInput');
+				var prompt = promptInput.value;
+				var apiKey = apiKeyInput.value;
 
-                // 隐藏 loading 图标
-                loadingContainer.style.display = 'none';
+				const response = await fetch(apiUrl, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ prompt: prompt, key: apiKey }),
+				});
 
-                if (!response.ok) {
-                    // 显示错误图标和错误信息
-                    errorContainer.style.display = 'block';
-                    const errorMessageContainer = document.getElementById('errorMessage');
-                    errorMessageContainer.textContent = 'Network response was not ok';
-                    throw new Error('Network response was not ok');
-                }
+				if (!response.ok) {
+					// 显示错误图标和错误信息
+					errorContainer.style.display = 'block';
+					const errorMessageContainer = document.getElementById('errorMessage');
+					errorMessageContainer.textContent = 'Network response was not ok';
+					throw new Error('Network response was not ok');
+				}
 
-                const data = await response.json();
+				const data = await response.json();
 
-                if (data.status === 'error') {
-                    // 显示错误图标和错误信息
-                    errorContainer.style.display = 'block';
-                    const errorMessageContainer = document.getElementById('errorMessage');
-                    errorMessageContainer.textContent = data.error;
-                } else if (data.status === 'okay') {
-                    // 显示生成的图像
-                    generatedImage.style.display = 'block';
-                    generatedImage.src = data.image_url;
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }
-    </script>
+				if (data.status === 'error') {
+					// 显示错误图标和错误信息
+					errorContainer.style.display = 'block';
+					const errorMessageContainer = document.getElementById('errorMessage');
+					errorMessageContainer.textContent = data.error;
+				} else if (data.status === 'okay') {
+					// 显示生成的图像
+					generatedImage.style.display = 'block';
+					generatedImage.src = data.image_url;
+				}
+			} catch (error) {
+				console.error('Error:', error);
+			} finally {
+				// 启用按钮
+				generateBtn.disabled = false;
+
+				// 隐藏 loading 图标
+				loadingContainer.style.display = 'none';
+			}
+		}
+	</script>
+
 
 </body>
 </html>
