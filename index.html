@@ -90,12 +90,16 @@
         <label for="promptInput">输入要求:</label>
         <input type="text" id="promptInput">
         <br>
+        <label for="apiKeyInput">输入API Key:</label>
+        <input type="text" id="apiKeyInput">
+        <br>
         <button id="generateBtn">生成图像！</button>
         <div id="loadingContainer">
             <img src="loading.gif" alt="Loading...">
         </div>
         <div id="errorContainer" style="display: none;">
             <img src="exclamation.png" alt="Error">
+            <div id="errorMessage"></div>
         </div>
         <img id="generatedImage" alt="Generated Image" style="display: none;"> <!-- 初始时隐藏 -->
     </div>
@@ -112,7 +116,7 @@
         async function generateImage() {
             try {
                 var loadingContainer = document.getElementById('loadingContainer');
-                // var errorContainer = document.getElementById('errorContainer'); // 不再需要此行
+                var apiKeyInput = document.getElementById('apiKeyInput');
 
                 // 显示 loading 图标
                 loadingContainer.style.display = 'block';
@@ -122,32 +126,42 @@
                 // 替换成你的 Flask 应用程序运行的地址
                 var apiUrl = 'https://tomiya520.pythonanywhere.com';
 
-                // 获取用户输入的 prompt
+                // 获取用户输入的 prompt 和 API Key
                 var promptInput = document.getElementById('promptInput');
                 var prompt = promptInput.value;
+                var apiKey = apiKeyInput.value;
 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ prompt: prompt }),
+                    body: JSON.stringify({ prompt: prompt , key: apiKey }),
                 });
 
                 // 隐藏 loading 图标
                 loadingContainer.style.display = 'none';
 
                 if (!response.ok) {
-                    // 显示错误图标
+                    // 显示错误图标和错误信息
                     errorContainer.style.display = 'block';
+                    const errorMessageContainer = document.getElementById('errorMessage');
+                    errorMessageContainer.textContent = 'Network response was not ok';
                     throw new Error('Network response was not ok');
                 }
 
-                const imageUrl = await response.text();
+                const data = await response.json();
 
-                // 显示生成的图像
-                generatedImage.style.display = 'block';
-                generatedImage.src = imageUrl;
+                if (data.status === 'error') {
+                    // 显示错误图标和错误信息
+                    errorContainer.style.display = 'block';
+                    const errorMessageContainer = document.getElementById('errorMessage');
+                    errorMessageContainer.textContent = data.error;
+                } else if (data.status === 'okay') {
+                    // 显示生成的图像
+                    generatedImage.style.display = 'block';
+                    generatedImage.src = data.image_url;
+                }
             } catch (error) {
                 console.error('Error:', error);
             }
