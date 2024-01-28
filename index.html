@@ -200,13 +200,11 @@
                     })
                     .catch(error => {
                         console.error('获取数据时出错：', error);
-                        alert('获取数据时出错,可能为授权信息过期。');
                         loader.style.display = 'none';
                     });
                 })
                 .catch((error) => {
-                    console.error('Error:', error);
-                    alert('获取授权信息时出错，请稍后重试。');
+                    console.error('授权信息获取出错', error);
                     loader.style.display = 'none';
                 });
         }
