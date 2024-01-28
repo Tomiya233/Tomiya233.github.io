@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据展示</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: url('https://imgapi.xl0408.top/index.php') no-repeat center center fixed;
+            background-size: cover;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.7); /* 调整透明度 */
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px); /* 添加模糊效果 */
+            animation: fadeIn 1.5s ease-in-out; /* 添加淡入动画，持续时间调整为1.5秒 */
+        }
+        h1 {
+            text-align: center;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            opacity: 0; /* 初始设置表格透明度为0 */
+            transition: opacity 1s ease-in-out; /* 添加渐变效果 */
+        }
+        .data-table th, .data-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .data-table th {
+            background-color: #f2f2f2;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .loader {
+            border: 6px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 6px solid #3498db;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            display: none; /* 初始隐藏加载动画 */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loader"></div> <!-- 加载动画 -->
+    <div class="container">
+        <h1>数据展示</h1>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>标题</th>
+                    <th>IP数</th>
+                    <th>浏览量</th>
+                    <th>访客数</th>
+                    <th>会话数</th>
+                    <th>跳出率</th>
+                    <th>平均访问时长</th>
+                </tr>
+            </thead>
+            <tbody id="data-body">
+                <!-- 数据将被插入到这里 -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 从API获取数据
+        const url = 'https://www.tongjiniao.com/api/situation/flow?domain_id=609822806072078336';
+        const authorization = 'Bearer eyJ0eXAiOiJqd3QifQ.eyJzdWIiOiIxIiwiaXNzIjoiaHR0cDpcL1wvOiIsImV4cCI6MTcwNjQzOTQ1MSwiaWF0IjoxNzA2MzUzMDUxLCJuYmYiOjE3MDYzNTMwNTEsInVpZCI6NjA5ODIyNTE5NzQ3OTA3NTg0LCJzIjoib1RSWkJWIiwianRpIjoiZjI0MjE3YjljZjlmOGNjMmFmODQ3YjBmMmY3ZDAxM2QifQ.JDJ5JDEwJFVUVTlkTVJKL21Oa2ZKTjVQT1RVLk9Eb3ZqWXZxck4zeXBHS0dkV3VGVFNHUHpQUFdacWJH'; // 在这里添加你的授权令牌
+
+        // 显示加载动画
+        const loader = document.querySelector('.loader');
+        loader.style.display = 'block';
+        
+
+        fetch(url, {
+            headers: {
+                'Authorization': authorization
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data); // 可选：记录获取的数据
+            const dataList = data.data.list;
+
+            // 假设你已经有了昨天的数据
+
+            // 用数据填充表格
+            const dataBody = document.getElementById('data-body');
+            dataList.forEach((item, index) => {
+                const row = document.createElement('tr');
+                // 如果是今日的数据，就与昨日此时的数据进行比较
+                if (item.title === '今日') {
+                    const yesterdayData = dataList[index + 1]; // 昨日此时的数据
+                    row.innerHTML = `
+                        <td>${item.title}</td>
+                        <td>${item.ip} ${getArrow(item.ip, yesterdayData.ip)}</td>
+                        <td>${item.pv} ${getArrow(item.pv, yesterdayData.pv)}</td>
+                        <td>${item.uv} ${getArrow(item.uv, yesterdayData.uv)}</td>
+                        <td>${item.vv} ${getArrow(item.vv, yesterdayData.vv)}</td>
+                        <td>${item.br}% ${getArrow(item.br, yesterdayData.br)}</td>
+                        <td>${item.du} ${getArrow(item.du, yesterdayData.du)}</td>
+                    `;
+                } else if (item.title === '预计今日') { // 如果是预计今日的数据，就与昨日的数据进行比较
+                    const yesterdayData = dataList.find(data => data.title === '昨日'); // 昨日的数据
+                    row.innerHTML = `
+                        <td>${item.title}</td>
+                        <td>${item.ip} ${getArrow(item.ip, yesterdayData.ip)}</td>
+                        <td>${item.pv} ${getArrow(item.pv, yesterdayData.pv)}</td>
+                        <td>${item.uv} ${getArrow(item.uv, yesterdayData.uv)}</td>
+                        <td>${item.vv} ${getArrow(item.vv, yesterdayData.vv)}</td>
+                        <td>${item.br}% ${getArrow(item.br, yesterdayData.br)}</td>
+                        <td>${item.du} ${getArrow(item.du, yesterdayData.du)}</td>
+                    `;
+                } else {
+                    row.innerHTML = `
+                        <td>${item.title}</td>
+                        <td>${item.ip}</td>
+                        <td>${item.pv}</td>
+                        <td>${item.uv}</td>
+                        <td>${item.vv}</td>
+                        <td>${item.br}%</td>
+                        <td>${item.du}</td>
+                    `;
+                }
+                dataBody.appendChild(row);
+            });
+
+            function getArrow(today, yesterday) {
+                if (today > yesterday) {
+                    return '<span style="color: red;">↑</span>';
+                } else if (today < yesterday) {
+                    return '<span style="color: green;">↓</span>';
+                } else {
+                    return '';
+                }
+            }
+
+
+
+            // 隐藏加载动画，并显示表格
+            loader.style.display = 'none';
+            const dataTable = document.querySelector('.data-table');
+            dataTable.style.opacity = '1';
+            
+        })
+        
+        .catch(error => {
+            console.error('获取数据时出错：', error);
+            alert('获取数据时出错，请稍后重试。');
+            loader.style.display = 'none'; // 隐藏加载动画以防止一直显示
+        });
+
+
+        
+    </script>
+</body>
+</html>
