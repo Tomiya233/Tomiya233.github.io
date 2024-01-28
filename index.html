@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>网站数据统计</title>
+    <title>数据展示</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -72,7 +72,7 @@
 <body>
     <div class="loader"></div> <!-- 加载动画 -->
     <div class="container">
-        <h1>网站统计数据</h1>
+        <h1>数据展示</h1>
         <table class="data-table">
             <thead>
                 <tr>
@@ -91,96 +91,98 @@
         </table>
     </div>
 
+
     <script>
         // 从API获取数据
         const url = 'https://www.tongjiniao.com/api/situation/flow?domain_id=609822806072078336';
-        const authorization = 'Bearer eyJ0eXAiOiJqd3QifQ.eyJzdWIiOiIxIiwiaXNzIjoiaHR0cDpcL1wvOiIsImV4cCI6MTcwNjQzOTQ1MSwiaWF0IjoxNzA2MzUzMDUxLCJuYmYiOjE3MDYzNTMwNTEsInVpZCI6NjA5ODIyNTE5NzQ3OTA3NTg0LCJzIjoib1RSWkJWIiwianRpIjoiZjI0MjE3YjljZjlmOGNjMmFmODQ3YjBmMmY3ZDAxM2QifQ.JDJ5JDEwJFVUVTlkTVJKL21Oa2ZKTjVQT1RVLk9Eb3ZqWXZxck4zeXBHS0dkV3VGVFNHUHpQUFdacWJH'; // 在这里添加你的授权令牌
+        let authorization;
 
-        // 显示加载动画
         const loader = document.querySelector('.loader');
         loader.style.display = 'block';
-        
+        const authorizationUrl = 'https://bf.yexc.top/authorization.txt?v=' + Date.now();
+        fetch(authorizationUrl)
+            .then(response => response.text())
+            .then(data => {
+                authorization = data;
+                // 使用authorization变量
+                fetch(url, {
+                    headers: {
+                        'Authorization': authorization
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data); // 可选：记录获取的数据
+                    const dataList = data.data.list;
 
-        fetch(url, {
-            headers: {
-                'Authorization': authorization
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data); // 可选：记录获取的数据
-            const dataList = data.data.list;
+                    // 用数据填充表格
+                    const dataBody = document.getElementById('data-body');
+                    dataList.forEach((item, index) => {
+                        const row = document.createElement('tr');
+                        if (item.title === '今日') {
+                            const yesterdayData = dataList[index + 1];
+                            row.innerHTML = `
+                                <td>${item.title}</td>
+                                <td>${item.ip} ${getArrow(item.ip, yesterdayData.ip)}</td>
+                                <td>${item.pv} ${getArrow(item.pv, yesterdayData.pv)}</td>
+                                <td>${item.uv} ${getArrow(item.uv, yesterdayData.uv)}</td>
+                                <td>${item.vv} ${getArrow(item.vv, yesterdayData.vv)}</td>
+                                <td>${item.br}% ${getArrow(item.br, yesterdayData.br)}</td>
+                                <td>${item.du} ${getArrow(item.du, yesterdayData.du)}</td>
+                            `;
+                        } else if (item.title === '预计今日') {
+                            const yesterdayData = dataList.find(data => data.title === '昨日');
+                            row.innerHTML = `
+                                <td>${item.title}</td>
+                                <td>${item.ip} ${getArrow(item.ip, yesterdayData.ip)}</td>
+                                <td>${item.pv} ${getArrow(item.pv, yesterdayData.pv)}</td>
+                                <td>${item.uv} ${getArrow(item.uv, yesterdayData.uv)}</td>
+                                <td>${item.vv} ${getArrow(item.vv, yesterdayData.vv)}</td>
+                                <td>${item.br}% ${getArrow(item.br, yesterdayData.br)}</td>
+                                <td>${item.du} ${getArrow(item.du, yesterdayData.du)}</td>
+                            `;
+                        } else {
+                            row.innerHTML = `
+                                <td>${item.title}</td>
+                                <td>${item.ip}</td>
+                                <td>${item.pv}</td>
+                                <td>${item.uv}</td>
+                                <td>${item.vv}</td>
+                                <td>${item.br}%</td>
+                                <td>${item.du}</td>
+                            `;
+                        }
+                        dataBody.appendChild(row);
+                    });
 
-            // 假设你已经有了昨天的数据
+                    function getArrow(today, yesterday) {
+                        if (today > yesterday) {
+                            return '<span style="color: red;">↑</span>';
+                        } else if (today < yesterday) {
+                            return '<span style="color: green;">↓</span>';
+                        } else {
+                            return '';
+                        }
+                    }
 
-            // 用数据填充表格
-            const dataBody = document.getElementById('data-body');
-            dataList.forEach((item, index) => {
-                const row = document.createElement('tr');
-                // 如果是今日的数据，就与昨日此时的数据进行比较
-                if (item.title === '今日') {
-                    const yesterdayData = dataList[index + 1]; // 昨日此时的数据
-                    row.innerHTML = `
-                        <td>${item.title}</td>
-                        <td>${item.ip} ${getArrow(item.ip, yesterdayData.ip)}</td>
-                        <td>${item.pv} ${getArrow(item.pv, yesterdayData.pv)}</td>
-                        <td>${item.uv} ${getArrow(item.uv, yesterdayData.uv)}</td>
-                        <td>${item.vv} ${getArrow(item.vv, yesterdayData.vv)}</td>
-                        <td>${item.br}% ${getArrow(item.br, yesterdayData.br)}</td>
-                        <td>${item.du} ${getArrow(item.du, yesterdayData.du)}</td>
-                    `;
-                } else if (item.title === '预计今日') { // 如果是预计今日的数据，就与昨日的数据进行比较
-                    const yesterdayData = dataList.find(data => data.title === '昨日'); // 昨日的数据
-                    row.innerHTML = `
-                        <td>${item.title}</td>
-                        <td>${item.ip} ${getArrow(item.ip, yesterdayData.ip)}</td>
-                        <td>${item.pv} ${getArrow(item.pv, yesterdayData.pv)}</td>
-                        <td>${item.uv} ${getArrow(item.uv, yesterdayData.uv)}</td>
-                        <td>${item.vv} ${getArrow(item.vv, yesterdayData.vv)}</td>
-                        <td>${item.br}% ${getArrow(item.br, yesterdayData.br)}</td>
-                        <td>${item.du} ${getArrow(item.du, yesterdayData.du)}</td>
-                    `;
-                } else {
-                    row.innerHTML = `
-                        <td>${item.title}</td>
-                        <td>${item.ip}</td>
-                        <td>${item.pv}</td>
-                        <td>${item.uv}</td>
-                        <td>${item.vv}</td>
-                        <td>${item.br}%</td>
-                        <td>${item.du}</td>
-                    `;
-                }
-                dataBody.appendChild(row);
+                    // 隐藏加载动画，并显示表格
+                    loader.style.display = 'none';
+                    const dataTable = document.querySelector('.data-table');
+                    dataTable.style.opacity = '1';
+                    
+                })
+                .catch(error => {
+                    console.error('获取数据时出错：', error);
+                    alert('获取数据时出错，请稍后重试。');
+                    loader.style.display = 'none';
+                });
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('获取授权信息时出错，请稍后重试。');
+                loader.style.display = 'none';
             });
-
-            function getArrow(today, yesterday) {
-                if (today > yesterday) {
-                    return '<span style="color: red;">↑</span>';
-                } else if (today < yesterday) {
-                    return '<span style="color: green;">↓</span>';
-                } else {
-                    return '';
-                }
-            }
-
-
-
-            // 隐藏加载动画，并显示表格
-            loader.style.display = 'none';
-            const dataTable = document.querySelector('.data-table');
-            dataTable.style.opacity = '1';
-            
-        })
-        
-        .catch(error => {
-            console.error('获取数据时出错：', error);
-            alert('获取数据时出错，请稍后重试。');
-            loader.style.display = 'none'; // 隐藏加载动画以防止一直显示
-        });
-
-
-        
     </script>
+
 </body>
 </html>
