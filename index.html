@@ -173,7 +173,7 @@
                 })
                 .catch(error => {
                     console.error('获取数据时出错：', error);
-                    alert('获取数据时出错，请稍后重试。');
+                    alert('获取数据时出错,可能为授权信息过期。');
                     loader.style.display = 'none';
                 });
             })
