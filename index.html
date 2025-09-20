@@ -115,109 +115,105 @@
     </div>
 
 
-    <script>
-        // 创建一个函数来获取数据并更新表格
-        function fetchDataAndUpdateTable() {
-            const url = 'https://www.tongjiniao.com/api/situation/flow?domain_id=609822806072078336';
-            let authorization;
-    
-            const loader = document.querySelector('.loader');
-            loader.style.display = 'block';
-            const authorizationUrl = 'https://bf.yexc.top/authorization.txt?v=' + Date.now();
-            fetch(authorizationUrl)
-                .then(response => response.text())
-                .then(data => {
-                    authorization = data;
-                    // 使用authorization变量
-                    fetch(url, {
-                        headers: {
-                            'Authorization': authorization,
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log(data); // 可选：记录获取的数据
-                        const dataList = data.data.list;
-    
-                        // 清除现有表格数据
-                        const dataBody = document.getElementById('data-body');
-                        dataBody.innerHTML = '';
-    
-                        // 用数据填充表格
-                        dataList.forEach((item, index) => {
-                            const row = document.createElement('tr');
-                            if (item.title === '今日') {
-                                const yesterdayData = dataList[index + 1];
-                                row.innerHTML = `
-                                    <td>${item.title}</td>
-                                    <td>${item.ip} ${getArrow(item.ip, yesterdayData.ip)}</td>
-                                    <td>${item.pv} ${getArrow(item.pv, yesterdayData.pv)}</td>
-                                    <td>${item.uv} ${getArrow(item.uv, yesterdayData.uv)}</td>
-                                    <td>${item.vv} ${getArrow(item.vv, yesterdayData.vv)}</td>
-                                    <td>${item.br}% ${getArrow(item.br, yesterdayData.br)}</td>
-                                    <td>${item.du} ${getArrow(item.du, yesterdayData.du)}</td>
-                                `;
-                            } else if (item.title === '预计今日') {
-                                const yesterdayData = dataList.find(data => data.title === '昨日');
-                                row.innerHTML = `
-                                    <td>${item.title}</td>
-                                    <td>${item.ip} ${getArrow(item.ip, yesterdayData.ip)}</td>
-                                    <td>${item.pv} ${getArrow(item.pv, yesterdayData.pv)}</td>
-                                    <td>${item.uv} ${getArrow(item.uv, yesterdayData.uv)}</td>
-                                    <td>${item.vv} ${getArrow(item.vv, yesterdayData.vv)}</td>
-                                    <td>${item.br}% ${getArrow(item.br, yesterdayData.br)}</td>
-                                    <td>${item.du} ${getArrow(item.du, yesterdayData.du)}</td>
-                                `;
-                            } else {
-                                row.innerHTML = `
-                                    <td>${item.title}</td>
-                                    <td>${item.ip}</td>
-                                    <td>${item.pv}</td>
-                                    <td>${item.uv}</td>
-                                    <td>${item.vv}</td>
-                                    <td>${item.br}%</td>
-                                    <td>${item.du}</td>
-                                `;
-                            }
-                            dataBody.appendChild(row);
-                        });
-    
-                        function getArrow(today, yesterday) {
-                            if (today > yesterday) {
-                                return '<span style="color: red;">↑</span>';
-                            } else if (today < yesterday) {
-                                return '<span style="color: green;">↓</span>';
-                            } else {
-                                return '';
-                            }
-                        }
-    
-                        // 隐藏加载动画，并显示表格
-                        loader.style.display = 'none';
-                        const dataTable = document.querySelector('.data-table');
-                        dataTable.style.opacity = '1';
-                        
-                    })
-                    .catch(error => {
-                        console.error('获取数据时出错：', error);
-                        loader.style.display = 'none';
-                    });
-                })
-                .catch((error) => {
-                    console.error('授权信息获取出错', error);
-                    loader.style.display = 'none';
-                });
+<script>
+const loader = document.querySelector('.loader');
+const dataTable = document.querySelector('.data-table');
+
+// 获取或输入密钥
+function getStoredKey() {
+    let key = localStorage.getItem('secret_key');
+    if (!key) {
+        key = prompt("请输入访问密钥：");
+        if (!key) {
+            alert("必须输入密钥才能访问！");
+            throw new Error("未输入密钥");
         }
-    
-        // 初始化页面加载时立即获取数据并更新表格
-        fetchDataAndUpdateTable();
-    
-        // 设置定时器，每10秒刷新一次数据
-        setInterval(fetchDataAndUpdateTable, 15000);
-    </script>
+        localStorage.setItem('secret_key', key);
+    }
+    return key;
+}
+
+// 获取 token，如果过期则重新请求
+async function getToken() {
+    let token = localStorage.getItem('token');
+    let tokenTime = localStorage.getItem('token_time');
+
+    if (!token || !tokenTime || (Date.now() - tokenTime > 24*60*60*1000)) {
+        const key = getStoredKey();
+        try {
+            const resp = await fetch(`http://你的服务器IP:5431/get_token?key=${encodeURIComponent(key)}`);
+            const data = await resp.json();
+            if (resp.status === 200 && data.token) {
+                token = data.token;
+                localStorage.setItem('token', token);
+                localStorage.setItem('token_time', Date.now());
+            } else {
+                alert(data.error || "获取 token 失败");
+                throw new Error(data.error || "获取 token 失败");
+            }
+        } catch (err) {
+            console.error("获取 token 出错:", err);
+            throw err;
+        }
+    }
+    return token;
+}
+
+// 请求数据并更新表格
+async function fetchDataAndUpdateTable() {
+    loader.style.display = 'block';
+    try {
+        const token = await getToken();
+        const url = 'https://www.tongjiniao.com/api/situation/flow?domain_id=609822806072078336';
+        const resp = await fetch(url, {
+            headers: {
+                'Authorization': token,
+                'User-Agent': 'Mozilla/5.0'
+            }
+        });
+        const data = await resp.json();
+
+        const dataList = data.data.list;
+        const dataBody = document.getElementById('data-body');
+        dataBody.innerHTML = '';
+
+        dataList.forEach((item, index) => {
+            const row = document.createElement('tr');
+            const yesterdayData = dataList[index+1] || dataList.find(d=>d.title==='昨日') || {};
+            row.innerHTML = `
+                <td>${item.title}</td>
+                <td>${item.ip} ${getArrow(item.ip, yesterdayData.ip)}</td>
+                <td>${item.pv} ${getArrow(item.pv, yesterdayData.pv)}</td>
+                <td>${item.uv} ${getArrow(item.uv, yesterdayData.uv)}</td>
+                <td>${item.vv} ${getArrow(item.vv, yesterdayData.vv)}</td>
+                <td>${item.br}% ${getArrow(item.br, yesterdayData.br)}</td>
+                <td>${item.du} ${getArrow(item.du, yesterdayData.du)}</td>`;
+            dataBody.appendChild(row);
+        });
+
+        function getArrow(today, yesterday) {
+            if(today > yesterday) return '<span style="color:red;">↑</span>';
+            if(today < yesterday) return '<span style="color:green;">↓</span>';
+            return '';
+        }
+
+        loader.style.display = 'none';
+        dataTable.style.opacity = '1';
+    } catch (err) {
+        loader.style.display = 'none';
+        console.error(err);
+    }
+}
+
+// 页面加载立即获取数据
+fetchDataAndUpdateTable();
+// 定时刷新
+setInterval(fetchDataAndUpdateTable, 15000);
+</script>
+
     
 
 </body>
 
 </html>
+
